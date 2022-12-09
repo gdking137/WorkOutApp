@@ -10,6 +10,10 @@ import UIKit
 class ViewController: UIViewController {
 
     @IBOutlet weak var tableView: UITableView!
+    
+    @IBOutlet var editButton: UIBarButtonItem!
+    var doneButton: UIBarButtonItem? //optional?
+    
     var tasks = [Task](){
         didSet{
             self.saveTasks()
@@ -18,16 +22,27 @@ class ViewController: UIViewController {
         
     
     override func viewDidLoad() {
-     
         super.viewDidLoad()
+        self.doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self, action: #selector(doneButtonTap))
+        //self.doneButton = UIBarButtonItem(barButtonSystemItem: .done, target: self , action: #selector(doneButtonTap())
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.loadTasks()
         // Do any additional setup after loading the view.
     }
 
+    //selector type으로 전달할 method는 @objc
+    //object c 호환성
+    @objc func doneButtonTap(){
+        self.navigationItem.leftBarButtonItem = self.editButton         //edit button이 원래대로 돌아오게함
+        self.tableView.setEditing(false, animated: true)                //뷰가 에딧모드에서 나오게하기
+    }
+    
     
     @IBAction func tapEditButton(_ sender: UIBarButtonItem) {
+        guard !self.tasks.isEmpty else {return}
+        self.navigationItem.leftBarButtonItem = self.doneButton
+        self.tableView.setEditing(true, animated: true)
     }
     
     @IBAction func tapAddButton(_ sender: UIBarButtonItem) {
@@ -102,6 +117,32 @@ extension ViewController: UITableViewDataSource{
             cell.accessoryType = .none
         }
         return cell
+    }
+    /*
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        self.tasks.remove(at: indexPath.row)   //삭제되는 셀이 어떤건지 알려주는 method
+        tableView.deleteRows(at: <#T##[IndexPath]#>, with: .automatic) //셀이 테이블 뷰에서 삭제된다
+        if self.tasks.isEmpty{      //모든 셀이 삭제되면
+            self.doneButtonTap()    //편집 모드를 빠져나온다
+        }
+    */
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        self.tasks.remove(at: indexPath.row)
+        tableView.deleteRows(at: [indexPath], with: .automatic)
+        if self.tasks.isEmpty {
+            self.doneButtonTap()
+        }
+    }
+    
+    func tableView(_ tableView: UITableView, canMoveRowAt indexPath: IndexPath) -> Bool { //원래 있던곳
+        return true
+    }
+    func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {         //어디로 이동했는지 알려줌
+        var tasks = self.tasks//배열을 재정렬
+        let task = tasks[sourceIndexPath.row]
+        task.remove(at.sourceIndexPath.row)
+        tasks.insert(task, at:destinationIndexPath.row)//이동할위치를 넘겨준다
+        self.tasks = tasks //할일 배열도 재정렬
     }
 }//UITableViewDataSource 쓸려면 이 꼭 두개의 메소드는 구현해야한다
 
